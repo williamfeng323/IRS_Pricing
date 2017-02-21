@@ -54,12 +54,13 @@ def get_rawdata(category, specific_url=None):
     # send http request to retrieve page
     if specific_url is None:
         url = categories[category.upper()]['url']
-    if 'parm' in categories[category.upper()]:
-        params = bytes(urllib.parse.urlencode(categories[category.upper()]['parm']).encode())
-        page = request.urlopen(url, params)
-    else:
-        page = request.urlopen(url)
-    page = BeautifulSoup(page, 'lxml')
+    # if 'parm' in categories[category.upper()]:
+    #     params = bytes(urllib.parse.urlencode(categories[category.upper()]['parm']).encode())
+    #     page = request.urlopen(url, params)
+    # else:
+    #     page = request.urlopen(url)
+    # page = BeautifulSoup(page, 'lxml')
+    page = None
     return {
         'LIBOR': lambda content: get_libor(content),
         'YIELD_CURVE': lambda content: get_spotcurve(content),
