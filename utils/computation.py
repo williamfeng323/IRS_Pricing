@@ -1,11 +1,11 @@
 import numpy as np
 from scipy import optimize
-
+import matplotlib.pyplot as plt
 import utils.utils as util
 import utils.bin_tree as btree
 
 
-def zb_discount(curve='TREASURY_PRICE', interval=.5):
+def zb_discount(curve='TREASURY_PRICE', maturity=None, interval=.5):
     # retrieve treasury bill/note/bond price from
     #       https://www.treasurydirect.gov/GA-FI/FedInvest/selectSecurityPriceDate.htm
     # compute the discount factor through boot strap method.
@@ -137,12 +137,12 @@ def calculate_bond(coupon, par, maturity, interval=.5):
     return price
 
 
-def calculate_swap_exposures(coupon, fixed_pay=-1, probability=.5, interval=.5):
+def calculate_swap_exposures(coupon, pay_flag=-1, probability=.5, interval=.5):
     rates = calibrate_tree(interval)
     payoff = list()
     import pdb
     for v in rates:
-        payoff.append(np.add(fixed_pay*coupon*interval, v).tolist())
+        payoff.append(np.add(pay_flag * coupon * interval, v).tolist())
         # pdb.set_trace()
         payoff[-1] = [100*x for x in payoff[-1]]
     values = [payoff[-1]]
@@ -177,18 +177,24 @@ def calculate_swap_exposures(coupon, fixed_pay=-1, probability=.5, interval=.5):
     return exposures, swap_value
 
 
-def calculate_cva(fixed_rate, maturity, interval=.5, fixed_payer = 'boa'):
+def calculate_swap(fixed_rate, maturity, interval=.5, pay_flag=-1, counterparty='boa', self_symbol='citi',
+                   cp_loss_severity=.4, self_loss_severity=.4):
     zb_price, discount_set = zb_discount('TREASURY_PRICE', interval)
-    cva_exposures, swap_value = calculate_swap_exposures(fixed_rate)
+    cva_exposures, swap_value = calculate_swap_exposures(fixed_rate,pay_flag)
+    dva_exposures, c_swap_value = calculate_swap_exposures(fixed_rate, -1*pay_flag)
     discounts = list()
     for k, v in discount_set.items():
         if k % interval == 0:
             discounts.append(discount_set[k])
     hazard_rate = util.get_hazard_rate(maturity, interval)
-    np.array(cva_exposures) * np.array(discounts) * np.array(hazard_rate[fixed_payer].values())
-
-    return None
-
+    cva = sum(np.array(cva_exposures) *
+              np.array(discounts) * np.array(list(hazard_rate[counterparty].values())) * cp_loss_severity)
+    dva = sum(np.array(dva_exposures) *
+              np.array(discounts) * np.array(list(hazard_rate[self_symbol].values())) * self_loss_severity)
+    print('Value of swap assume no default: ' + str(swap_value))
+    print('Value of CVA: ' + str(cva))
+    print('Value of DVA: ' + str(dva))
+    return swap_value - cva + dva
 
 
 
