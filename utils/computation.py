@@ -20,11 +20,6 @@ def zb_discount(curve='TREASURY_PRICE', interval=.5):
             discount[key] = \
                 (val['price']/100 - (val['coupon']*interval) * sum_discount) / \
                 (1+val['coupon']*interval)
-    # x = list(discount.keys())
-    # y = list(discount.values())
-    # tck = interpolate.splrep(x, y)
-    # xnew = np.arange(0, x[-1], interval)
-    # ynew = interpolate.splev(xnew, tck)
     return zb_price, discount
 
 
@@ -61,7 +56,7 @@ def back_count(rate_tree, coupon, interval, par=100, maturity=None, probability=
                 else:
                     nodes.append(exp_v)
         value_tree.append(nodes)
-    return value_tree[-1][0]
+    return value_tree
 
 
 def bond_value(guess_rate, rate_before, coupon, init_price, interval=.5, sigma=0.43, probability=.5, par=100):
@@ -77,7 +72,7 @@ def bond_value(guess_rate, rate_before, coupon, init_price, interval=.5, sigma=0
         rate.append(rate[i]*np.exp(sigma*2))
         i += 1
     r = rate_before + [rate]
-    return back_count(r, coupon, interval) - init_price
+    return back_count(r, coupon, interval)[-1][0] - init_price
 
 
 def calibrate_tree(interval=.5, sigma=.13):
@@ -105,8 +100,6 @@ def calibrate_tree(interval=.5, sigma=.13):
     for ind, val in enumerate(implied_forward_rate[:-1]):
         bond = zb_price[interval + interval * (ind + 1)]
         params = (tree[:ind+1], bond['coupon'], bond['price'], interval, sigma)
-        print(bond)
-        # print(implied_forward_rate[ind+1])
         cal_rate = optimize.fsolve(bond_value, implied_forward_rate[ind+1], args=params)
         nodes = [float(cal_rate)]
         i = 0
@@ -117,27 +110,84 @@ def calibrate_tree(interval=.5, sigma=.13):
     return tree
 
 
-def draw_tree(rate_tree):
+def draw_tree(raw_tree):
+    my_tree = list()
+    init_nodes = list()
+    for v in raw_tree[-1]:
+        init_nodes.append(btree.Node(v))
+    my_tree.append(init_nodes)
     i = 0
-    while i < len(rate_tree):
-        last_col = rate_tree[-1]
+    while i < len(raw_tree) - 1:
+        temp = list()
+        last_nodes = my_tree[-1]
+        root = raw_tree[-2 - i]
+        for k, v in enumerate(root):
+            node = btree.Node(root[k])
+            node.l = last_nodes[k]
+            node.r = last_nodes[k+1]
+            temp.append(node)
+        my_tree.append(temp)
+        i += 1
+    return btree.Tree(my_tree[-1][0])
 
-    return None
 
-
-def calculate_vnf(coupon, par, maturity, interval):
+def calculate_bond(coupon, par, maturity, interval=.5):
     rate_tree = calibrate_tree(interval)
-    back_count(rate_tree, coupon, interval, par, maturity)
+    price = back_count(rate_tree, coupon, interval, par, maturity)[-1][0]
+    return price
+
+
+def calculate_swap_exposures(coupon, fixed_pay=-1, probability=.5, interval=.5):
+    rates = calibrate_tree(interval)
+    payoff = list()
+    import pdb
+    for v in rates:
+        payoff.append(np.add(fixed_pay*coupon*interval, v).tolist())
+        # pdb.set_trace()
+        payoff[-1] = [100*x for x in payoff[-1]]
+    values = [payoff[-1]]
+    values.append((np.array(values[0])/(1+np.array(rates[-1]))).tolist())
+    for ind, val in enumerate(rates):
+        nodes = list()
+        last_rate = rates[-1 - ind]
+        end_value = values[-1]
+        for i, v in enumerate(end_value):
+            # pdb.set_trace()
+            if i < len(end_value) - 1:
+                exp_v = expected_value(last_rate[i], end_value[i], end_value[i + 1], probability)
+                nodes.append(exp_v)
+        if len(last_rate) != 1:
+            values.append(np.add(nodes, payoff[-2 - ind]).tolist())
+    swap_value = values[-1][0]
+    payoff_tree = draw_tree(payoff)
+    values = list(reversed(values[1:]))
+    value_tree = draw_tree(values)
+    exposures = list()
+    for ind, val in enumerate(values[1:]):
+        exposure = 0.0
+        for v in val:
+            exposure += max(0, v) * np.power(probability, len(val)) * len(value_tree.binaryTreePaths(v))
+        for v in payoff[ind]:
+            exposure += max(0, v) * np.power(probability, len(payoff[ind])) * len(payoff_tree.binaryTreePaths(v))
+        exposures.append(exposure)
+    last_exposure = 0.0
+    for v in payoff[-1]:
+        last_exposure += max(0, v) * np.power(probability, len(payoff[-1])) * len(payoff_tree.binaryTreePaths(v))
+    exposures.append(last_exposure)
+    return exposures, swap_value
+
+
+def calculate_cva(fixed_rate, maturity, interval=.5, fixed_payer = 'boa'):
+    zb_price, discount_set = zb_discount('TREASURY_PRICE', interval)
+    cva_exposures, swap_value = calculate_swap_exposures(fixed_rate)
+    discounts = list()
+    for k, v in discount_set.items():
+        if k % interval == 0:
+            discounts.append(discount_set[k])
+    hazard_rate = util.get_hazard_rate(maturity, interval)
+    np.array(cva_exposures) * np.array(discounts) * np.array(hazard_rate[fixed_payer].values())
+
     return None
-
-
-
-
-
-
-
-
-
 
 
 

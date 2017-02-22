@@ -2,6 +2,9 @@ import urllib.request as request
 import urllib.parse
 from bs4 import BeautifulSoup
 import re
+from scipy import interpolate
+import numpy as np
+import matplotlib as plt
 
 
 def get_libor(content):
@@ -12,6 +15,23 @@ def get_libor(content):
         libor['period'] = period_reg.match(tr.find('strong').string).group(1)
         libor['rate'] = float(tr.find_all('td')[1].string)
     return libor
+
+
+def interpolating(init_point, maturity, interval):
+    tck = interpolate.splrep(list(init_point.keys()), list(init_point.values()))
+    newx = np.arange(0, maturity + interval, interval)
+    newy = interpolate.splev(newx, tck)
+    return dict(zip(newx.tolist(), newy.tolist()))
+
+
+def get_hazard_rate(maturity, interval):
+    if maturity > 5:
+        maturity = 5
+    boa_observed_hazard_rate = {.25: .0003, .6: .0012, .75: .0045, 1: .0149, 2: .1675, 3: .5043, 4: 1.1416, 5: 1.8261}
+    citi_observed_hazard_rate = {.25: .0008, .6: .0032, .75: .0115, 1: .0338, 2: .2716, 3: .6936, 4: 1.4888, 5: 2.2835}
+    boa_hazard_rate = interpolating(boa_observed_hazard_rate, maturity, interval)
+    citi_hazard_rate = interpolating(citi_observed_hazard_rate, maturity, interval)
+    return {'boa': boa_hazard_rate, 'citi':citi_hazard_rate}
 
 
 def get_spotcurve(content):

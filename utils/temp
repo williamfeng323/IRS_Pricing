@@ -1,33 +1,33 @@
-import utils.computation as cp
-import numpy as np
-import scipy.optimize as optimize
-
-interval=.5
-sigma=.13
-zb_price, discount_set = cp.zb_discount('TREASURY_PRICE', interval)
-implied_forward_rate = []
-# get discount for every interval
-discounts = []
-
-for k, v in discount_set.items():
-    if k % interval == 0:
-        discounts.append(discount_set[k])
-
-for i, v in enumerate(discounts):
-    if i+1 < len(discounts):
-        implied_forward_rate.append(discounts[i]/discounts[i+1]-1)
-
-implied_forward_rate.insert(0, 1 / discount_set[interval] - 1)
-tree = [1 / discount_set[interval] - 1]
-
-for ind, val in enumerate(implied_forward_rate[:-1]):
-bond = zb_price[interval + interval * (ind + 1)]
-params = (tree[:ind+1], bond['coupon'], bond['price'], sigma)
-    cal_rate = optimize.fsolve(cp.bond_value, implied_forward_rate[ind+1], args=params)
-    tree.append(float(cal_rate))
-
-for i, v in enumerate(tree[1:]):
-    k = 1
-    while k < i + 2:
-        tree[i + 1].append(tree[i + 1][k - 1] * 1.2712)
-        k += 1
+# import utils.computation as cp
+# import numpy as np
+# import scipy.optimize as optimize
+#
+# interval=.5
+# sigma=.13
+# zb_price, discount_set = cp.zb_discount('TREASURY_PRICE', interval)
+# implied_forward_rate = []
+# # get discount for every interval
+# discounts = []
+#
+# for k, v in discount_set.items():
+#     if k % interval == 0:
+#         discounts.append(discount_set[k])
+#
+# for i, v in enumerate(discounts):
+#     if i+1 < len(discounts):
+#         implied_forward_rate.append(discounts[i]/discounts[i+1]-1)
+#
+# implied_forward_rate.insert(0, 1 / discount_set[interval] - 1)
+# tree = [1 / discount_set[interval] - 1]
+#
+# for ind, val in enumerate(implied_forward_rate[:-1]):
+# bond = zb_price[interval + interval * (ind + 1)]
+# params = (tree[:ind+1], bond['coupon'], bond['price'], sigma)
+#     cal_rate = optimize.fsolve(cp.bond_value, implied_forward_rate[ind+1], args=params)
+#     tree.append(float(cal_rate))
+#
+# for i, v in enumerate(tree[1:]):
+#     k = 1
+#     while k < i + 2:
+#         tree[i + 1].append(tree[i + 1][k - 1] * 1.2712)
+#         k += 1

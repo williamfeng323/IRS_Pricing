@@ -10,8 +10,8 @@ class Node:
 
 
 class Tree:
-    def __init__(self):
-        self.root = None
+    def __init__(self, val=None):
+        self.root = val
 
     def getRoot(self):
         return self.root
@@ -34,6 +34,33 @@ class Tree:
             else:
                 node.r = Node(val)
 
+    def updateRoot(self, val):
+        self.root = Node(val)
+
+    def addLeft(self, val):
+        if self.root is None:
+            return None
+        else:
+            self.root.l = Node(val)
+
+    def addRight(self, val):
+        if self.root is None:
+            return None
+        else:
+            self.root.r = Node(val)
+
+    def bindLeft(self, node):
+        if self.root is None:
+            return None
+        else:
+            self.root.l = node
+
+    def bindRight(self, node):
+        if self.root is None:
+            return None
+        else:
+            self.root.r = node
+
     # def addUnsorted(self, val):
     #     if self.root is None:
     #         self.root = Node(val)
@@ -48,7 +75,6 @@ class Tree:
     #     #         node.r = Node(val)
     #     # else:
     #     #     node.l = Node(val)
-
 
     def find(self, val):
         if self.root is not None :
@@ -93,3 +119,19 @@ class Tree:
             return None
         else:
             return node
+
+    def binaryTreePaths(self, val):
+        self.ans = list()
+        if self.root is None:
+            return self.ans
+
+        def dfs(root, path):
+            if root.v == val:
+                self.ans += path,
+            if root.l:
+                dfs(root.l, path + "->" + str(root.l.v))
+            if root.r:
+                dfs(root.r, path + "->" + str(root.r.v))
+
+        dfs(self.root, str(self.root.v))
+        return self.ans
