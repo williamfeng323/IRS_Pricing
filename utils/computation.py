@@ -20,6 +20,9 @@ def zb_discount(curve='TREASURY_PRICE', maturity=None, interval=.5):
             discount[key] = \
                 (val['price']/100 - (val['coupon']*interval) * sum_discount) / \
                 (1+val['coupon']*interval)
+    spot_curve = np.add(-1, np.reciprocal(list(discount.values()))).tolist()
+    plt.plot(list(discount.keys()), spot_curve, '8-')
+    plt.show()
     return zb_price, discount
 
 

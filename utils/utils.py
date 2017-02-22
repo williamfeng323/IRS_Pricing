@@ -22,7 +22,7 @@ def interpolating(init_point, maturity, interval):
     tck = interpolate.splrep(list(init_point.keys()), list(init_point.values()), k=3)
     newx = np.arange(interval, maturity + interval, interval)
     newy = interpolate.splev(newx, tck, der=0)
-    plt.plot(list(init_point.keys()), list(init_point.values()), 'x', newx, newy, '-')
+    plt.plot(list(init_point.keys()), list(init_point.values()), 'o', newx, newy, 'r.-')
     plt.legend(['Observed', 'cubic spline'], loc='best')
     plt.show()
     return dict(zip(newx.tolist(), newy.tolist()))
