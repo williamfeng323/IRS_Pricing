@@ -5,12 +5,12 @@ import utils.utils as util
 import utils.bin_tree as btree
 
 
-def zb_discount(curve='TREASURY_PRICE', maturity=None, interval=.5):
+def zb_discount(curve='TREASURY_PRICE', maturity=5, interval=.5):
     # retrieve treasury bill/note/bond price from
     #       https://www.treasurydirect.gov/GA-FI/FedInvest/selectSecurityPriceDate.htm
     # compute the discount factor through boot strap method.
     # Interval: the coupon payment frequency.
-    zb_price = util.get_rawdata(curve)
+    zb_price = util.get_rawdata(curve, maturity, interval)
     discount = {}
     for key, val in zb_price.items():
         if val['coupon'] == 0:
@@ -21,8 +21,10 @@ def zb_discount(curve='TREASURY_PRICE', maturity=None, interval=.5):
                 (val['price']/100 - (val['coupon']*interval) * sum_discount) / \
                 (1+val['coupon']*interval)
     spot_curve = np.add(-1, np.reciprocal(list(discount.values()))).tolist()
+    print('calculate spot curve: ' + str(spot_curve) + '\n')
     plt.plot(list(discount.keys()), spot_curve, '8-')
     plt.show()
+    print('selected zero coupon treasury bill/notes/bond' + str(zb_price) + '\n')
     return zb_price, discount
 
 
@@ -78,7 +80,7 @@ def bond_value(guess_rate, rate_before, coupon, init_price, interval=.5, sigma=0
     return back_count(r, coupon, interval)[-1][0] - init_price
 
 
-def calibrate_tree(interval=.5, sigma=.13):
+def calibrate_tree(maturity=3, interval=.5, sigma=.13):
     # Create binomial interest rate tree through observed market fixed income instruments
     # Interval: Delta of each step
     # sigma: Assume the sigma is fixed.
@@ -88,7 +90,7 @@ def calibrate_tree(interval=.5, sigma=.13):
     # 2. Calculate market implied forward rate and use as initial guess
     # 3. Back calculate the binomial forward interest rate
 
-    zb_price, discount_set = zb_discount('TREASURY_PRICE', interval)
+    zb_price, discount_set = zb_discount('TREASURY_PRICE', maturity, interval)
     implied_forward_rate = list()
     # get discount for every interval
     discounts = list()
@@ -110,6 +112,7 @@ def calibrate_tree(interval=.5, sigma=.13):
             nodes.append(nodes[i] * np.exp(sigma * 2))
             i += 1
         tree.append(nodes)
+    print('binomial interest rate tree: ' + str(tree) + '\n')
     return tree
 
 
@@ -134,19 +137,17 @@ def draw_tree(raw_tree):
     return btree.Tree(my_tree[-1][0])
 
 
-def calculate_bond(coupon, par, maturity, interval=.5):
-    rate_tree = calibrate_tree(interval)
+def calculate_bond(coupon, par, maturity, interval=.5, sigma=.13):
+    rate_tree = calibrate_tree(maturity, interval, sigma)
     price = back_count(rate_tree, coupon, interval, par, maturity)[-1][0]
     return price
 
 
-def calculate_swap_exposures(coupon, pay_flag=-1, probability=.5, interval=.5):
-    rates = calibrate_tree(interval)
+def calculate_swap_exposures(maturity, coupon, pay_flag=-1, probability=.5, interval=.5, sigma=.13):
+    rates = calibrate_tree(maturity, interval, sigma)
     payoff = list()
-    import pdb
     for v in rates:
         payoff.append(np.add(pay_flag * coupon * interval, v).tolist())
-        # pdb.set_trace()
         payoff[-1] = [100*x for x in payoff[-1]]
     values = [payoff[-1]]
     values.append((np.array(values[0])/(1+np.array(rates[-1]))).tolist())
@@ -177,14 +178,16 @@ def calculate_swap_exposures(coupon, pay_flag=-1, probability=.5, interval=.5):
     for v in payoff[-1]:
         last_exposure += max(0, v) * np.power(probability, len(payoff[-1])) * len(payoff_tree.binaryTreePaths(v))
     exposures.append(last_exposure)
+    print('Payoff tree:  ' + str(payoff) + '\n')
+    print('value tree: ' + str(values) + '\n')
     return exposures, swap_value
 
 
 def calculate_swap(fixed_rate, maturity, interval=.5, pay_flag=-1, counterparty='boa', self_symbol='citi',
-                   cp_loss_severity=.4, self_loss_severity=.4):
-    zb_price, discount_set = zb_discount('TREASURY_PRICE', interval)
-    cva_exposures, swap_value = calculate_swap_exposures(fixed_rate,pay_flag)
-    dva_exposures, c_swap_value = calculate_swap_exposures(fixed_rate, -1*pay_flag)
+                   cp_loss_severity=.4, self_loss_severity=.4, sigma=.13):
+    zb_price, discount_set = zb_discount('TREASURY_PRICE', maturity, interval)
+    cva_exposures, swap_value = calculate_swap_exposures(maturity, fixed_rate, pay_flag, sigma=sigma)
+    dva_exposures, c_swap_value = calculate_swap_exposures(maturity, fixed_rate, -1*pay_flag, sigma=sigma)
     discounts = list()
     for k, v in discount_set.items():
         if k % interval == 0:
@@ -196,11 +199,5 @@ def calculate_swap(fixed_rate, maturity, interval=.5, pay_flag=-1, counterparty=
               np.array(discounts) * np.array(list(hazard_rate[self_symbol].values())) * self_loss_severity)
     print('Value of swap assume no default: ' + str(swap_value))
     print('Value of CVA: ' + str(cva))
-    print('Value of DVA: ' + str(dva))
+    print('Value of DVA: ' + str(dva) + '\n')
     return swap_value - cva + dva
-
-
-
-
-
-

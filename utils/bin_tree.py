@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # Reference from http://stackoverflow.com/questions/2598437/how-to-implement-a-binary-tree
+# Add function binaryTreePaths(), updateRoot(), bindLeft(), bindRight(), addLeft(), addRight(), getAllLeft()
 
 
 class Node:
@@ -60,21 +61,6 @@ class Tree:
             return None
         else:
             self.root.r = node
-
-    # def addUnsorted(self, val):
-    #     if self.root is None:
-    #         self.root = Node(val)
-    #     else:
-    #         self._addUnsorted(val, self.root)
-    #
-    # def _addUnsorted(self, val, node):
-    #     # if node.l is not None:
-    #     #     if node.r is not None:
-    #     #         self._addUnsorted(val, node.l)
-    #     #     else:
-    #     #         node.r = Node(val)
-    #     # else:
-    #     #     node.l = Node(val)
 
     def find(self, val):
         if self.root is not None :
