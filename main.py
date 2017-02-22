@@ -1,29 +1,40 @@
+import utils.utils as utl
 import utils.computation as cp
-tree = cp.draw_tree(cp.calibrate_tree())
-tree.binaryTreePaths(0.0080876771453680923)
-vt = cp.calculate_swap_exposures(.04)
+import numpy as np
+import matplotlib.pyplot as plt
 
-
-import urllib.request as request
-import urllib.parse
-from bs4 import BeautifulSoup
-import utils.util as ut
-import datetime
-categories = {'LIBOR': {'url':'http://www.bankrate.com/rates/interest-rates/libor.aspx'},
-         'YTMCURVE': {'url':'https://www.treasury.gov/resource-center/data-chart-center/interest-rates/Pages/TextView.aspx?data=yield'},
-         'TREASURY_PRICE': {'url': 'https://www.treasurydirect.gov/GA-FI/FedInvest/selectSecurityPriceDate.htm',
-                           'parm': {'priceData.month': '1', 'priceData.day': '1', 'priceData.year': '2017', 'submit': 'Show+Prices'}}
-              }
-category = 'TREASURY_PRICE'
-url = categories[category.upper()]['url']
-if 'parm' in categories[category.upper()]:
-    params = categories[category.upper()]['parm']
-    params['priceData.month'] = datetime.date.today().month
-    params['priceData.year'] = datetime.date.today().year
-    params['priceData.day'] = datetime.date.today().day
-    params = bytes(urllib.parse.urlencode(params).encode())
-    page = request.urlopen(url, params)
-else:
-    page = request.urlopen(url)
-page = BeautifulSoup(page, 'lxml')
-# ut.get_treasury_price(page, 5, .5)
+# sigma_list = np.arange(0.01, 1, .01).tolist()
+# swap_values = list()
+# for v in sigma_list:
+#     swap_values.append(cp.calculate_swap(.02, 5, .5, sigma=v))
+#
+# print(dict(zip(sigma_list, swap_values)))
+# plt.plot(sigma_list, swap_values, '-')
+# plt.savefig('sigma_sensitivity.png', bbox_inches='tight', dpi=1200)
+# plt.show()
+#
+# bond_price = cp.calculate_bond(.02, 100, 5.016438)
+# print('price of the 5 bond is ' + str(bond_price))
+# print('different between calculated price and actual price: ' + str(bond_price - 100.281250))
+#
+# bond_price = cp.calculate_bond(.01125, 100, 4.5205479)
+# print('price of the 4.5 bond is ' + str(bond_price))
+# print('different between calculated price and actual price: ' + str(bond_price - 96.812500))
+#
+# bond_price = cp.calculate_bond(.03625, 100, 3.9808219)
+# print('price of the 4 bond is ' + str(bond_price))
+# print('different between calculated price and actual price: ' + str(bond_price - 107.1875))
+#
+# bond_price = cp.calculate_bond(.01375, 100, 2.978082)
+# print('price of the 3 bond is ' + str(bond_price))
+# print('different between calculated price and actual price: ' + str(bond_price - 99.6875))
+#
+# bond_price = cp.calculate_bond(.0275, 100, 1.978082)
+# print('price of the 2 bond is ' + str(bond_price))
+# print('different between calculated price and actual price: ' + str(bond_price - 102.96875))
+#
+# bond_price = cp.calculate_bond(.035, 100, .97808)
+# print('price of the 1 bond is ' + str(bond_price))
+# print('different between calculated price and actual price: ' + str(bond_price - 102.5))
+swap_value = cp.calculate_swap(.02, 5)
+print(swap_value)

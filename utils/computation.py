@@ -22,8 +22,8 @@ def zb_discount(curve='TREASURY_PRICE', maturity=5, interval=.5):
                 (1+val['coupon']*interval)
     spot_curve = np.add(-1, np.reciprocal(list(discount.values()))).tolist()
     print('calculate spot curve: ' + str(spot_curve) + '\n')
-    plt.plot(list(discount.keys()), spot_curve, '8-')
-    plt.show()
+    # plt.plot(list(discount.keys()), spot_curve, '8-')
+    # plt.show()
     print('selected zero coupon treasury bill/notes/bond' + str(zb_price) + '\n')
     return zb_price, discount
 
@@ -80,7 +80,7 @@ def bond_value(guess_rate, rate_before, coupon, init_price, interval=.5, sigma=0
     return back_count(r, coupon, interval)[-1][0] - init_price
 
 
-def calibrate_tree(maturity=3, interval=.5, sigma=.13):
+def calibrate_tree(maturity=3, interval=.5, sigma=.06):
     # Create binomial interest rate tree through observed market fixed income instruments
     # Interval: Delta of each step
     # sigma: Assume the sigma is fixed.
@@ -137,13 +137,13 @@ def draw_tree(raw_tree):
     return btree.Tree(my_tree[-1][0])
 
 
-def calculate_bond(coupon, par, maturity, interval=.5, sigma=.13):
+def calculate_bond(coupon, par, maturity, interval=.5, sigma=.06):
     rate_tree = calibrate_tree(maturity, interval, sigma)
     price = back_count(rate_tree, coupon, interval, par, maturity)[-1][0]
     return price
 
 
-def calculate_swap_exposures(maturity, coupon, pay_flag=-1, probability=.5, interval=.5, sigma=.13):
+def calculate_swap_exposures(maturity, coupon, pay_flag=-1, probability=.5, interval=.5, sigma=.06):
     rates = calibrate_tree(maturity, interval, sigma)
     payoff = list()
     for v in rates:
@@ -184,7 +184,7 @@ def calculate_swap_exposures(maturity, coupon, pay_flag=-1, probability=.5, inte
 
 
 def calculate_swap(fixed_rate, maturity, interval=.5, pay_flag=-1, counterparty='boa', self_symbol='citi',
-                   cp_loss_severity=.4, self_loss_severity=.4, sigma=.13):
+                   cp_loss_severity=.4, self_loss_severity=.4, sigma=.06):
     zb_price, discount_set = zb_discount('TREASURY_PRICE', maturity, interval)
     cva_exposures, swap_value = calculate_swap_exposures(maturity, fixed_rate, pay_flag, sigma=sigma)
     dva_exposures, c_swap_value = calculate_swap_exposures(maturity, fixed_rate, -1*pay_flag, sigma=sigma)
