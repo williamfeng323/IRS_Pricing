@@ -59,33 +59,33 @@ def get_ytmcurve(content, interval=None):
 
 
 def get_treasury_price(content, maturity=5, interval=.5):
-    tr_list = content.find('table', class_='data1').findAll('tr')[1:]
-    bond_list = dict.fromkeys(np.arange(interval, maturity + interval, interval).tolist())
-    today = datetime.date.today()
-    for v in tr_list:
-        info = v.findAll('td')
-        bond_maturity = datetime.datetime.strptime(info[3].string, '%m/%d/%Y').date()
-        bond_maturity_in_years = (bond_maturity - today).days / 365
-        for k in bond_list.keys():
-            if k*.90 < bond_maturity_in_years < k*1.10 and\
-                    (info[1].string != 'TIPS' and info[1].string != 'MARKET BASED FRN'):
-                diff = abs(bond_maturity_in_years - k)
-                if bond_list[k] is None or (abs(bond_list[k]['bond_maturity_in_years'] - k)) > diff:
-                    bond_list[k] = {'price': float(info[6].string),
-                                    'coupon': float(info[2].string.strip('%'))/100,
-                                    'bond_maturity_in_years': bond_maturity_in_years
-                                    }
-    return bond_list
-    # return {0.5: {'price': 100.59375, 'coupon': 0.01875, 'bond_maturity_in_years': 0.5178082191780822},
-    #         1.0: {'price': 101.84375, 'coupon': 0.0275, 'bond_maturity_in_years': 1.0136986301369864},
-    #         1.5: {'price': 100.59375, 'coupon': 0.015, 'bond_maturity_in_years': 1.5178082191780822},
-    #         2.0: {'price': 100.53125, 'coupon': 0.015, 'bond_maturity_in_years': 2.0136986301369864},
-    #         2.5: {'price': 100.59375, 'coupon': 0.01625, 'bond_maturity_in_years': 2.5178082191780824},
-    #         3.0: {'price': 99.25, 'coupon': 0.0125, 'bond_maturity_in_years': 3.0164383561643837},
-    #         3.5: {'price': 99.0625, 'coupon': 0.01375, 'bond_maturity_in_years': 3.5205479452054793},
-    #         4.0: {'price': 97.5, 'coupon': 0.01125, 'bond_maturity_in_years': 4.016438356164383},
-    #         4.5: {'price': 100.53125, 'coupon': 0.02, 'bond_maturity_in_years': 4.52054794520548},
-    #         5.0: {'price': 99.0625, 'coupon': 0.0175, 'bond_maturity_in_years': 5.016438356164383}}
+    # tr_list = content.find('table', class_='data1').findAll('tr')[1:]
+    # bond_list = dict.fromkeys(np.arange(interval, maturity + interval, interval).tolist())
+    # today = datetime.date.today()
+    # for v in tr_list:
+    #     info = v.findAll('td')
+    #     bond_maturity = datetime.datetime.strptime(info[3].string, '%m/%d/%Y').date()
+    #     bond_maturity_in_years = (bond_maturity - today).days / 365
+    #     for k in bond_list.keys():
+    #         if k*.90 < bond_maturity_in_years < k*1.10 and\
+    #                 (info[1].string != 'TIPS' and info[1].string != 'MARKET BASED FRN'):
+    #             diff = abs(bond_maturity_in_years - k)
+    #             if bond_list[k] is None or (abs(bond_list[k]['bond_maturity_in_years'] - k)) > diff:
+    #                 bond_list[k] = {'price': float(info[6].string),
+    #                                 'coupon': float(info[2].string.strip('%'))/100,
+    #                                 'bond_maturity_in_years': bond_maturity_in_years
+    #                                 }
+    # return bond_list
+    return {0.5: {'price': 100.59375, 'coupon': 0.01875, 'bond_maturity_in_years': 0.5178082191780822},
+            1.0: {'price': 101.84375, 'coupon': 0.0275, 'bond_maturity_in_years': 1.0136986301369864},
+            1.5: {'price': 100.59375, 'coupon': 0.015, 'bond_maturity_in_years': 1.5178082191780822},
+            2.0: {'price': 100.53125, 'coupon': 0.015, 'bond_maturity_in_years': 2.0136986301369864},
+            2.5: {'price': 100.59375, 'coupon': 0.01625, 'bond_maturity_in_years': 2.5178082191780824},
+            3.0: {'price': 99.25, 'coupon': 0.0125, 'bond_maturity_in_years': 3.0164383561643837},
+            3.5: {'price': 99.0625, 'coupon': 0.01375, 'bond_maturity_in_years': 3.5205479452054793},
+            4.0: {'price': 97.5, 'coupon': 0.01125, 'bond_maturity_in_years': 4.016438356164383},
+            4.5: {'price': 100.53125, 'coupon': 0.02, 'bond_maturity_in_years': 4.52054794520548},
+            5.0: {'price': 99.0625, 'coupon': 0.0175, 'bond_maturity_in_years': 5.016438356164383}}
 
 
 def get_rawdata(category, maturity, interval, specific_url=None, data_date=None):
@@ -102,21 +102,21 @@ def get_rawdata(category, maturity, interval, specific_url=None, data_date=None)
                                 }
                   }
     # send http request to retrieve page
-    if specific_url is None:
-        url = categories[category.upper()]['url']
-    if data_date is None:
-        data_date = datetime.date.today()-relativedelta(days=+1)
-    if 'parm' in categories[category.upper()]:
-        params = categories[category.upper()]['parm']
-        params['priceData.month'] = data_date.month
-        params['priceData.year'] = data_date.year
-        params['priceData.day'] = data_date.day
-        params = bytes(urllib.parse.urlencode(params).encode())
-        page = request.urlopen(url, params)
-    else:
-        page = request.urlopen(url)
-    page = BeautifulSoup(page, 'lxml')
-    # page = None
+    # if specific_url is None:
+    #     url = categories[category.upper()]['url']
+    # if data_date is None:
+    #     data_date = datetime.date.today()-relativedelta(days=+1)
+    # if 'parm' in categories[category.upper()]:
+    #     params = categories[category.upper()]['parm']
+    #     params['priceData.month'] = data_date.month
+    #     params['priceData.year'] = data_date.year
+    #     params['priceData.day'] = data_date.day
+    #     params = bytes(urllib.parse.urlencode(params).encode())
+    #     page = request.urlopen(url, params)
+    # else:
+    #     page = request.urlopen(url)
+    # page = BeautifulSoup(page, 'lxml')
+    page = None
     return {
         'LIBOR': lambda content: get_libor(content),
         'YTMCURVE': lambda content: get_ytmcurve(content),
