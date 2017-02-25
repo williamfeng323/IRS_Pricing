@@ -184,7 +184,7 @@ def calculate_swap_exposures(maturity, coupon, pay_flag=-1, probability=.5, inte
 
 
 def calculate_swap(fixed_rate, maturity, interval=.5, pay_flag=-1, counterparty='boa', self_symbol='citi',
-                   cp_loss_severity=.4, self_loss_severity=.4, sigma=.06):
+                   cp_loss_severity=.6, self_loss_severity=.6, sigma=.06):
     zb_price, discount_set = zb_discount('TREASURY_PRICE', maturity, interval)
     cva_exposures, swap_value = calculate_swap_exposures(maturity, fixed_rate, pay_flag, sigma=sigma)
     dva_exposures, c_swap_value = calculate_swap_exposures(maturity, fixed_rate, -1*pay_flag, sigma=sigma)
